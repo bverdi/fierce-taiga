@@ -1,6 +1,3 @@
-# Custom Tools Blackboard
-Custom Tools BlackBoard to edit date contents in bath 
-
 ## Build Setup
 
 ``` bash
@@ -17,9 +14,3 @@ $ npm run start
 # generate static project
 $ npm run generate
 ```
-
-## Note
-* The .env file should not be green. Only in this project because it is a sample
-
-## Implementation
-* https://github.com/grupo-a/custom-tools-bb_sample/wiki
