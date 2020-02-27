@@ -1,0 +1,13 @@
+  listPlansQuestions:
+    name: ${self:service}_listPlansQuestions${self:provider.stage}
+    handler: src/controllers/plans/_handler.listPlansQuestionsRoute
+    description: Function to list plans questions
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plansQuestions
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}

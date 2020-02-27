@@ -1,0 +1,97 @@
+  listCourses:
+    name: ${self:service}_getCourses_${self:provider.stage}
+    handler: src/controllers/courses/_handler.listCoursesRoute
+    description: Function to return a courses list
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: courses
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+  
+  getCourse:
+    name: ${self:service}_getCourse_${self:provider.stage}
+    handler: src/controllers/courses/_handler.getCourseRoute
+    description: Function to return a course by id
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: courses/{id}
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  createCourse:
+    name: ${self:service}_createCourse_${self:provider.stage}
+    handler: src/controllers/courses/_handler.createCourseRoute
+    description: Function to create course
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: courses
+          method: POST
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  editCourse:
+    name: ${self:service}_editCourse_${self:provider.stage}
+    handler: src/controllers/courses/_handler.editCourseRoute
+    description: Function to edit course
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: courses/{id}
+          method: PUT
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  deleteCourse:
+    name: ${self:service}_deleteCourse_${self:provider.stage}
+    handler: src/controllers/courses/_handler.deleteCourseRoute
+    description: Function to edit course
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: courses/{id}
+          method: DELETE
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  listModulesByCourse:
+    name: ${self:service}_listModulesByCourse_${self:provider.stage}
+    handler: src/controllers/courses/_handler.listModulesByCourseRoute
+    description: Function to create Modules
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: courses/{id}/modules
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  listSessionsStudentsByFilter:
+    name: ${self:service}_listSessionsStudentsByFilter_${self:provider.stage}
+    handler: src/controllers/plans/_handler.listSessionsByFilterRoute
+    description: Function to get sessions by study plan, module and filters
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: courses/{id}/modules/{moduleId}/sessions
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}

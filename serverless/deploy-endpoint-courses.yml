@@ -1,0 +1,35 @@
+service: ${env:API_NAME}-courses
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  stage: ${env:VERSION}
+  region: us-east-1
+  tracing: true
+  deploymentBucket: ${env:DEPLOYMENT_BUCKET}
+  apiGateway:
+    restApiId: 
+      'Fn::ImportValue': ${env:API_NAME}-${self:provider.stage}-restApiId
+    restApiRootResourceId:
+      'Fn::ImportValue': ${env:API_NAME}-${self:provider.stage}-rootResourceId
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - cloudwatch:*
+        - logs:*
+        - xray:*
+        - ses:*
+      Resource: "*"
+  environment:
+    NODE_ENV:           ${env:NODE_ENV}
+    LOG_INFO_ENABLE:    ${env:LOG_INFO_ENABLE}
+    LOG_ERROR_ENABLE:   ${env:LOG_ERROR_ENABLE}
+    LOG_WARN_ENABLE:    ${env:LOG_WARN_ENABLE}
+    DB_SOFIA_HOST:      ${env:DB_SOFIA_HOST}
+    DB_SOFIA_DATABASE:  ${env:DB_SOFIA_DATABASE}
+    DB_SOFIA_USER:      ${env:DB_SOFIA_USER}
+    DB_SOFIA_PASSWORD:  ${env:DB_SOFIA_PASSWORD}
+    DB_SOFIA_PORT:      ${env:DB_SOFIA_PORT}
+
+functions:
+  - ${file(serverless/resources/courses.yml)}

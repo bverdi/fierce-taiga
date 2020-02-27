@@ -1,0 +1,46 @@
+{
+  "name": "sofia-api",
+  "version": "1.0.0",
+  "description": "Sofia API",
+  "author": "BBM",
+  "private": true,
+  "scripts": {
+    "local": "sls offline --config serverless/_local.yml",
+    "deploy:api": "serverless deploy --config serverless/deploy-api-init.yml",
+    "deploy:api:permissions": "serverless deploy --config serverless/deploy-api-permissions.yml",
+    "deploy:endpoint:auth": "serverless deploy --config serverless/deploy-endpoint-auth.yml",
+    "deploy:endpoint:courses": "serverless deploy --config serverless/deploy-endpoint-courses.yml",
+    "deploy:endpoint:modules": "serverless deploy --config serverless/deploy-endpoint-modules.yml",
+    "deploy:endpoint:plans": "serverless deploy --config serverless/deploy-endpoint-plans.yml",
+    "deploy:endpoint:questions": "serverless deploy --config serverless/deploy-endpoint-questions.yml",
+    "deploy:endpoint:sessions": "serverless deploy --config serverless/deploy-endpoint-sessions.yml",
+    "deploy:endpoint:subjects": "serverless deploy --config serverless/deploy-endpoint-subjects.yml"
+  },
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "cross-env": "^5.2.0",
+    "dotenv": "^8.0.0",
+    "express": "^4.16.4",
+    "jsonwebtoken": "^8.5.1",
+    "lambda-warmer": "^1.2.1",
+    "moment": "^2.24.0",
+    "pg": "^7.17.0",
+    "request": "^2.88.0",
+    "serverless": "^1.57.0",
+    "serverless-api-gateway-xray": "^1.0.1",
+    "serverless-dotenv-plugin": "^2.1.1"
+  },
+  "devDependencies": {
+    "aws-sdk": "^2.519.0",
+    "chai": "^4.2.0",
+    "dotenv": "^8.1.0",
+    "eslint": "^6.8.0",
+    "nodemon": "^1.18.9",
+    "serverless": "^1.57.0",
+    "serverless-api-gateway-xray": "^1.0.1",
+    "serverless-dotenv-plugin": "^2.1.1",
+    "serverless-offline": "^5.12.0",
+    "serverless-plugin-tracing": "^2.0.0"
+  }
+}

@@ -1,0 +1,16 @@
+service: ${env:API_NAME}-api-permissions
+
+provider:
+  name: aws
+  region: us-east-1
+  stage: ${env:VERSION}
+  deploymentBucket: ${env:DEPLOYMENT_BUCKET}
+
+resources:
+  Resources:
+    PermissionInvokeFunctionAuthorizerApiGateway:
+      Type: AWS::Lambda::Permission
+      Properties:
+        FunctionName: arn:aws:lambda:${self:provider.region}:${env:AWS_ACCOUNT_ID}:function:${env:API_NAME}_${self:provider.stage}_authorizerToken
+        Action: lambda:InvokeFunction
+        Principal: apigateway.amazonaws.com

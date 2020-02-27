@@ -1,0 +1,14 @@
+createToken:
+    name: ${self:service}_createToken_${self:provider.stage}
+    handler: src/controllers/auth/_handler.createTokenRoute
+    description: Function to create a token
+    timeout: 30
+    memorySize: 256
+    environment:
+      TOKEN_SECRET_KEY: ${env:TOKEN_SECRET_KEY}
+    events:
+      - http:
+          path: auth/token
+          method: POST
+          cors: true
+          private: true

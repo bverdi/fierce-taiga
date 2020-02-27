@@ -1,0 +1,35 @@
+service: sofia-api-local
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  region: us-east-1
+  stage: v1
+  environment:
+    NODE_ENV:           'development'
+    LOG_INFO_ENABLE:    ${env:LOG_INFO_ENABLE}
+    LOG_ERROR_ENABLE:   ${env:LOG_ERROR_ENABLE}
+    LOG_WARN_ENABLE:    ${env:LOG_WARN_ENABLE}
+    DB_SAFEA_DATABASE:  ${env:DB_SAFEA_DATABASE}
+    DB_SAFEA_USER:      ${env:DB_SAFEA_USER}
+    DB_SAFEA_PASSWORD:  ${env:DB_SAFEA_PASSWORD}
+    DB_SAFEA_HOST:      ${env:DB_SAFEA_HOST}
+    DB_SAFEA_PORT:      ${env:DB_SAFEA_PORT}
+
+functions:
+  - ${file(serverless/resources/auth.yml)}
+  - ${file(serverless/resources/authorizer-token.yml)}
+  - ${file(serverless/resources/courses.yml)}
+  - ${file(serverless/resources/modules.yml)}
+  - ${file(serverless/resources/plans.yml)}
+  - ${file(serverless/resources/questions.yml)}
+  - ${file(serverless/resources/sessions.yml)}
+  - ${file(serverless/resources/subjects.yml)}
+
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-offline
+
+custom:
+  serverless-offline:
+    apiKey: 'local'

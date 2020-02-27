@@ -1,0 +1,8 @@
+authorizerToken:
+  name: ${self:service}_${self:provider.stage}_authorizerToken
+  handler: src/controllers/auth/_handler.authorizerToken
+  description: Function to autorizer a token
+  timeout: 30
+  memorySize: 256
+  environment:
+    TOKEN_SECRET_KEY: ${env:TOKEN_SECRET_KEY}

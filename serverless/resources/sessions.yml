@@ -1,0 +1,70 @@
+
+  getSessionById:
+    name: ${self:service}_getSessionById${self:provider.stage}
+    handler: src/controllers/plans/_handler.getSessionByIdRoute
+    description: Function to get session by id
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: sessions/{sessionId}
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+            
+  editSession:
+    name: ${self:service}_editSession${self:provider.stage}
+    handler: src/controllers/plans/_handler.editSessionRoute
+    description: Function to edit session
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: sessions/{sessionId}
+          method: PUT
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  deleteSession:
+    name: ${self:service}_deleteSession${self:provider.stage}
+    handler: src/controllers/plans/_handler.deleteSessionRoute
+    description: Function to delete session
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: sessions/{sessionId}
+          method: DELETE
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  getStudentsSessionByStatus:
+    name: ${self:service}_getStudentsSessionByStatus_${self:provider.stage}
+    handler: src/controllers/plans/_handler.getStudentsSessionByStatusRoute
+    description: Function to get students session
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: sessions/{sessionId}/session-status/{status}/students
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+          
+  getSessionStudent:
+    name: ${self:service}_getSessionStudent_${self:provider.stage}
+    handler: src/controllers/plans/_handler.getSessionStudentRoute
+    description: Function to get student session by studentId
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: sessions-students/{sessionsStudentId}
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}

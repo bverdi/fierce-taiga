@@ -1,0 +1,83 @@
+  createSubject:
+    name: ${self:service}_createSubject_${self:provider.stage}
+    handler: src/controllers/courses/_handler.createSubjectRoute
+    description: Function to create subject
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: subjects
+          method: POST
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  listSubject:
+    name: ${self:service}_listSubject_${self:provider.stage}
+    handler: src/controllers/courses/_handler.listSubjectRoute
+    description: Function to create subject
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: subjects
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  getSubject:
+    name: ${self:service}_getSubject_${self:provider.stage}
+    handler: src/controllers/courses/_handler.getSubjectRoute
+    description: Function to create subject
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: subjects/{id}
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  editSubject:
+    name: ${self:service}_editSubject_${self:provider.stage}
+    handler: src/controllers/courses/_handler.editSubjectRoute
+    description: Function to create subject
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: subjects/{id}
+          method: PUT
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  deleteSubject:
+    name: ${self:service}_deletetSubject_${self:provider.stage}
+    handler: src/controllers/courses/_handler.deleteSubjectRoute
+    description: Function to delete subject
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: subjects/{id}
+          method: DELETE
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  listStudentsBySubject:
+    name: ${self:service}_listStudentsBySubject${self:provider.stage}
+    handler: src/controllers/plans/_handler.listStudentsBySubjectRoute
+    description: Function to list students by subject
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: subjects/{Id}/students
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}

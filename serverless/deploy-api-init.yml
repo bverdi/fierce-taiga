@@ -1,0 +1,334 @@
+service: sofia-ucam-api
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  region: us-east-1
+  stage: ${env:VERSION}
+  deploymentBucket: ${env:DEPLOYMENT_BUCKET}
+  apiGateway:
+    restApiId: 
+      'Fn::ImportValue': ${env:API_NAME}-${self:provider.stage}-restApiId
+    restApiRootResourceId:
+      'Fn::ImportValue': ${env:API_NAME}-${self:provider.stage}-rootResourceId
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - cloudwatch:*
+        - logs:*
+        - xray:*
+      Resource: "*"
+  environment:
+    NODE_ENV:           ${env:NODE_ENV}
+    LOG_INFO_ENABLE:    ${env:LOG_INFO_ENABLE}
+    LOG_ERROR_ENABLE:   ${env:LOG_ERROR_ENABLE}
+    LOG_WARN_ENABLE:    ${env:LOG_WARN_ENABLE}
+    DB_SOFIA_HOST:      ${env:DB_SOFIA_HOST}
+    DB_SOFIA_DATABASE:  ${env:DB_SOFIA_DATABASE}
+    DB_SOFIA_USER:      ${env:DB_SOFIA_USER}
+    DB_SOFIA_PASSWORD:  ${env:DB_SOFIA_PASSWORD}
+    DB_SOFIA_PORT:      ${env:DB_SOFIA_PORT}
+
+
+functions:
+  - ${file(serverless/resources/authorizer-token.yml)}
+
+plugins: 
+  - serverless-api-gateway-xray
+
+custom:
+  apiGatewayXray: true
+
+resources:
+  Resources:
+### Gateway
+    ApiGatewayRestApi:
+      Type: AWS::ApiGateway::RestApi
+      Properties:
+        Name: ${env:API_NAME}-${self:provider.stage}
+
+    ApiGatewayAuthorizer:
+      Type: AWS::ApiGateway::Authorizer
+      Properties:
+        AuthorizerResultTtlInSeconds: 0
+        IdentitySource: method.request.header.Authorization
+        Name: authorizerToken
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        Type: TOKEN
+        AuthorizerUri: arn:aws:apigateway:${self:provider.region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${self:provider.region}:${env:AWS_ACCOUNT_ID}:function:${self:service}_${self:provider.stage}_authorizerToken/invocations
+
+### Gateway Response
+    GatewayResponseDefault400:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: DEFAULT_4XX
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-4XX_generic\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseDefault4XX:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: DEFAULT_4XX
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-4XX_generic\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseDefault500:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: DEFAULT_5XX
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-5XX_generic\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseAccessDeied:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: ACCESS_DENIED
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-403_access-denied\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseApiConfigurationError:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: API_CONFIGURATION_ERROR
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-500_api-configuration-error\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseAuthorizerConfigurationError:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: AUTHORIZER_CONFIGURATION_ERROR
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-500_authorizer-configuration-error\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseAuthorizerFailure:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: AUTHORIZER_FAILURE
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-500_authorizer-failure\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseBadRequestBody:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: BAD_REQUEST_BODY
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-400_bad-request-body\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseBadRequestParameters:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: BAD_REQUEST_PARAMETERS
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-400_bad-request-parameters\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseExpiredToken:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: EXPIRED_TOKEN
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-403_expired-token\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseIntegrationFailure:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: INTEGRATION_FAILURE
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-504_integration-failure\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseIntegrationTimeout:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: INTEGRATION_TIMEOUT
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-504_integration-timeout\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseInvalidApiKey:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: INVALID_API_KEY
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-403_invalid-api-key\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseInvalidSignature:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: INVALID_SIGNATURE
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-403_invalid-signature\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseMissingAuthenticationToken:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: MISSING_AUTHENTICATION_TOKEN
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-403_missing-authentication-token\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseQuotaExceeded:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: QUOTA_EXCEEDED
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-429_quota-exceeded\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseRequestTooLarge:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: REQUEST_TOO_LARGE
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-413_request-too-large\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseResourceNotFound:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: RESOURCE_NOT_FOUND
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-404_resource-not-found\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseThrottled:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: THROTTLED
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-429_throttled\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseUnauthorized:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: UNAUTHORIZED
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-401_unauthorized\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseUnauthorizedMediType:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: UNSUPPORTED_MEDIA_TYPE
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"sofia-admin-415_unsupported-media-type\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+### Outputs 
+  Outputs:
+    ApiGatewayRestApiId:
+      Value:
+        Ref: ApiGatewayRestApi
+      Export:
+        Name: ${env:API_NAME}-${self:provider.stage}-restApiId
+
+    ApiGatewayRestApiRootResourceId:
+      Value:
+        Fn::GetAtt:
+          - ApiGatewayRestApi
+          - RootResourceId
+      Export:
+        Name: ${env:API_NAME}-${self:provider.stage}-rootResourceId
+
+    ApiGatewayAuthorizerId:
+      Value:
+        Ref: ApiGatewayAuthorizer
+      Export:
+        Name: ${env:API_NAME}-${self:provider.stage}-authorizerId

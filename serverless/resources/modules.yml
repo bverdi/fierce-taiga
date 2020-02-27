@@ -1,0 +1,97 @@
+  createModule:
+    name: ${self:service}_createModules_${self:provider.stage}
+    handler: src/controllers/courses/_handler.createModuleRoute
+    description: Function to create Modules
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: modules
+          method: POST
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  listModules:
+    name: ${self:service}_listModules_${self:provider.stage}
+    handler: src/controllers/courses/_handler.listModulesRoute
+    description: Function to create Modules
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: modules
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  getModule:
+    name: ${self:service}_getModule_${self:provider.stage}
+    handler: src/controllers/courses/_handler.getModuleRoute
+    description: Function to create Modules
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: modules/{id}
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  editModule:
+    name: ${self:service}_editModule_${self:provider.stage}
+    handler: src/controllers/courses/_handler.editModuleRoute
+    description: Function to create Modules
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: modules/{id}
+          method: PUT
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  deleteModule:
+    name: ${self:service}_deleteModule_${self:provider.stage}
+    handler: src/controllers/courses/_handler.deleteModuleRoute
+    description: Function to delete Modules
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: modules/{id}
+          method: DELETE
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  insertSubjectOnModule:
+    name: ${self:service}_insertSubjectOnModule_${self:provider.stage}
+    handler: src/controllers/courses/_handler.insertSubjectOnModuleRoute
+    description: Function to create Modules
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: modules/{id}/subjects
+          method: POST
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  listSubjectOnModule:
+    name: ${self:service}_listSubjectOnModule_${self:provider.stage}
+    handler: src/controllers/courses/_handler.listSubjectOnModuleRoute
+    description: Function to create Modules
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: modules/{id}/subjects
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}

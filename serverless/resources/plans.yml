@@ -1,0 +1,250 @@
+  createPlan:
+    name: ${self:service}_createPlans${self:provider.stage}
+    handler: src/controllers/plans/_handler.createPlanRoute
+    description: Function to create plans
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans
+          method: POST
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  listPlans:
+    name: ${self:service}_listPlans${self:provider.stage}
+    handler: src/controllers/plans/_handler.listPlanRoute
+    description: Function to create plans
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  getPlansByModule:
+    name: ${self:service}_getPlansByModule${self:provider.stage}
+    handler: src/controllers/plans/_handler.getPlansByModuleRoute
+    description: Function to get plans by subject
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/subjects/{subjectId}
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+          
+  getPlansById:
+    name: ${self:service}_getPlansById${self:provider.stage}
+    handler: src/controllers/plans/_handler.getPlanByIdRoute
+    description: Function to get plans by id
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  getStudentDetails:
+    name: ${self:service}_getStudentDetails${self:provider.stage}
+    handler: src/controllers/plans/_handler.getStudentDetailsRoute
+    description: Function to get student details
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/students/{studentId}/details
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  getStudentDetailsBySession:
+    name: ${self:service}_getStudentDetailsBySession${self:provider.stage}
+    handler: src/controllers/plans/_handler.getStudentDetailsBySessionRoute
+    description: Function to get student details
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: students/{studentId}/sessions/{sessionId}/details
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  editPlan:
+    name: ${self:service}_editPlan${self:provider.stage}
+    handler: src/controllers/plans/_handler.editPlanRoute
+    description: Function to edit plan
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}
+          method: PUT
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  deletePlan:
+    name: ${self:service}_deletePlan${self:provider.stage}
+    handler: src/controllers/plans/_handler.deletePlanRoute
+    description: Function to delete plan
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}
+          method: DELETE
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  createStudent:
+    name: ${self:service}_createStudent${self:provider.stage}
+    handler: src/controllers/plans/_handler.createStudentRoute
+    description: Function to create student
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/students
+          method: POST
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  getPlansByStudent:
+    name: ${self:service}_getPlansByStudent${self:provider.stage}
+    handler: src/controllers/plans/_handler.getPlansByStudentRoute
+    description: Function to get plans by student
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/students/{studentId}
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  editStudent:
+    name: ${self:service}_editStudent${self:provider.stage}
+    handler: src/controllers/plans/_handler.editStudentRoute
+    description: Function to edit student
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/students/{studentId}
+          method: PUT
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  createStudentSession:
+    name: ${self:service}_createStudentSession${self:provider.stage}
+    handler: src/controllers/plans/_handler.createStudentSessionRoute
+    description: Function to create student sessions
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/sessions/{sessionId}/students/{studentId}
+          method: POST
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  editStudentSession:
+    name: ${self:service}_editStudentSession${self:provider.stage}
+    handler: src/controllers/plans/_handler.editStudentSessionRoute
+    description: Function to edit student sessions
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: students/{studentId}/sessions/{sessionId}
+          method: PUT
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  getStudentSession:
+    name: ${self:service}_getStudentSession${self:provider.stage}
+    handler: src/controllers/plans/_handler.getStudentSessionRoute
+    description: Function to get student sessions
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/sessions/{sessionId}/student-session/{studentSessionId}
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  getStudentSessionByStudent:
+    name: ${self:service}_getStudentSessionByStudent${self:provider.stage}
+    handler: src/controllers/plans/_handler.getStudentSessionByStudentRoute
+    description: Function to get student sessions by student
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/sessions/{sessionId}/student/{studentId}
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  createSession:
+    name: ${self:service}_createSession${self:provider.stage}
+    handler: src/controllers/plans/_handler.createSessionRoute
+    description: Function to create session
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/sessions 
+          method: POST
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+
+  getSessionByStudyPlan:
+    name: ${self:service}_getSessionBySubject${self:provider.stage}
+    handler: src/controllers/plans/_handler.getSessionByStudyPlanRoute
+    description: Function to get session by study plan
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/sessions
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}
+  getStudentsByStudyPlan:
+    name: ${self:service}_getStudentsByStudyPlan${self:provider.stage}
+    handler: src/controllers/plans/_handler.getStudentsByStudyPlanRoute
+    description: Function to get students by study plan
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/students
+          method: GET
+          cors: true
+          private: true
+          authorizer: ${file(serverless/resources/shared/authorizer.token.js)}

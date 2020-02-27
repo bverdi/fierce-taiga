@@ -1,0 +1,1262 @@
+service: sofia-api
+
+plugins:
+  - serverless-offline
+  - serverless-api-gateway-xray
+  - serverless-plugin-tracing
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  stage: v1
+  region: us-east-1
+  tracing: true
+  deploymentBucket: ${env:DEPLOYMENT_BUCKET}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - cloudwatch:*
+        - logs:*
+        - xray:*
+        - ses:*
+      Resource: "*"
+  environment:
+    NODE_ENV:           ${env:NODE_ENV}
+    LOG_INFO_ENABLE:    ${env:LOG_INFO_ENABLE}
+    LOG_ERROR_ENABLE:   ${env:LOG_ERROR_ENABLE}
+    LOG_WARN_ENABLE:    ${env:LOG_WARN_ENABLE}
+    DB_SOFIA_HOST:      ${env:DB_SOFIA_HOST}
+    DB_SOFIA_DATABASE:  ${env:DB_SOFIA_DATABASE}
+    DB_SOFIA_USER:      ${env:DB_SOFIA_USER}
+    DB_SOFIA_PASSWORD:  ${env:DB_SOFIA_PASSWORD}
+    DB_SOFIA_PORT:      ${env:DB_SOFIA_PORT}
+
+functions:
+  authorizerToken:
+    name: ${self:service}_authorizerToken_${self:provider.stage}
+    handler: src/controllers/auth/_handler.authorizerToken
+    description: Function to autorizer a token
+    timeout: 30
+    memorySize: 256
+    environment:
+      TOKEN_SECRET_KEY: ${env:TOKEN_SECRET_KEY}
+
+  createToken:
+    name: ${self:service}_createToken_${self:provider.stage}
+    handler: src/controllers/auth/_handler.createTokenRoute
+    description: Function to create a token
+    timeout: 30
+    memorySize: 256
+    environment:
+      TOKEN_SECRET_KEY: ${env:TOKEN_SECRET_KEY}
+    events:
+      - http:
+          path: auth/token
+          method: POST
+          cors: true
+          private: true
+      - schedule:
+          name: warmer-schedule-sofia-createToken_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+  
+  listCourses:
+    name: ${self:service}_getCourses_${self:provider.stage}
+    handler: src/controllers/courses/_handler.listCoursesRoute
+    description: Function to return a courses list
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: courses
+          method: GET
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listCourses_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+  
+  getCourse:
+    name: ${self:service}_getCourse_${self:provider.stage}
+    handler: src/controllers/courses/_handler.getCourseRoute
+    description: Function to return a course by id
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: courses/{id}
+          method: GET
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-getCourse_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  createCourse:
+    name: ${self:service}_createCourse_${self:provider.stage}
+    handler: src/controllers/courses/_handler.createCourseRoute
+    description: Function to create course
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: courses
+          method: POST
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-createCourse_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  editCourse:
+    name: ${self:service}_editCourse_${self:provider.stage}
+    handler: src/controllers/courses/_handler.editCourseRoute
+    description: Function to edit course
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: courses/{id}
+          method: PUT
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-editCourse_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  deleteCourse:
+    name: ${self:service}_deleteCourse_${self:provider.stage}
+    handler: src/controllers/courses/_handler.deleteCourseRoute
+    description: Function to edit course
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: courses/{id}
+          method: DELETE
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-editCourse_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  createSubject:
+    name: ${self:service}_createSubject_${self:provider.stage}
+    handler: src/controllers/courses/_handler.createSubjectRoute
+    description: Function to create subject
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: subjects
+          method: POST
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-createSubject_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  listSubject:
+    name: ${self:service}_listSubject_${self:provider.stage}
+    handler: src/controllers/courses/_handler.listSubjectRoute
+    description: Function to create subject
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: subjects
+          method: GET
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubject_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  getSubject:
+    name: ${self:service}_getSubject_${self:provider.stage}
+    handler: src/controllers/courses/_handler.getSubjectRoute
+    description: Function to create subject
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: subjects/{id}
+          method: GET
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-getSubject_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  editSubject:
+    name: ${self:service}_editSubject_${self:provider.stage}
+    handler: src/controllers/courses/_handler.editSubjectRoute
+    description: Function to create subject
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: subjects/{id}
+          method: PUT
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-editSubject_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  deleteSubject:
+    name: ${self:service}_deletetSubject_${self:provider.stage}
+    handler: src/controllers/courses/_handler.deleteSubjectRoute
+    description: Function to delete subject
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: subjects/{id}
+          method: DELETE
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-editSubject_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  createModule:
+    name: ${self:service}_createModules_${self:provider.stage}
+    handler: src/controllers/courses/_handler.createModuleRoute
+    description: Function to create Modules
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: modules
+          method: POST
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-createModules_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  listModules:
+    name: ${self:service}_listModules_${self:provider.stage}
+    handler: src/controllers/courses/_handler.listModulesRoute
+    description: Function to create Modules
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: modules
+          method: GET
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listModules_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  listModulesByCourse:
+    name: ${self:service}_listModulesByCourse_${self:provider.stage}
+    handler: src/controllers/courses/_handler.listModulesByCourseRoute
+    description: Function to create Modules
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: courses/{id}/modules
+          method: GET
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listModulesByCourse_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  getModule:
+    name: ${self:service}_getModule_${self:provider.stage}
+    handler: src/controllers/courses/_handler.getModuleRoute
+    description: Function to create Modules
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: modules/{id}
+          method: GET
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-getModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  editModule:
+    name: ${self:service}_editModule_${self:provider.stage}
+    handler: src/controllers/courses/_handler.editModuleRoute
+    description: Function to create Modules
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: modules/{id}
+          method: PUT
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-editModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  deleteModule:
+    name: ${self:service}_deleteModule_${self:provider.stage}
+    handler: src/controllers/courses/_handler.deleteModuleRoute
+    description: Function to delete Modules
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: modules/{id}
+          method: DELETE
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-editModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  insertSubjectOnModule:
+    name: ${self:service}_insertSubjectOnModule_${self:provider.stage}
+    handler: src/controllers/courses/_handler.insertSubjectOnModuleRoute
+    description: Function to create Modules
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: modules/{id}/subjects
+          method: POST
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-insertSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  listSubjectOnModule:
+    name: ${self:service}_listSubjectOnModule_${self:provider.stage}
+    handler: src/controllers/courses/_handler.listSubjectOnModuleRoute
+    description: Function to create Modules
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: modules/{id}/subjects
+          method: GET
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  createPlan:
+    name: ${self:service}_createPlans${self:provider.stage}
+    handler: src/controllers/plans/_handler.createPlanRoute
+    description: Function to create plans
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans
+          method: POST
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  listPlans:
+    name: ${self:service}_listPlans${self:provider.stage}
+    handler: src/controllers/plans/_handler.listPlanRoute
+    description: Function to create plans
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans
+          method: GET
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  getPlansByModule:
+    name: ${self:service}_getPlansByModule${self:provider.stage}
+    handler: src/controllers/plans/_handler.getPlansByModuleRoute
+    description: Function to get plans by subject
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/subjects/{subjectId}
+          method: GET
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+          
+  getPlansById:
+    name: ${self:service}_getPlansById${self:provider.stage}
+    handler: src/controllers/plans/_handler.getPlanRoute
+    description: Function to get plans by id
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}
+          method: GET
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  editPlan:
+    name: ${self:service}_editPlan${self:provider.stage}
+    handler: src/controllers/plans/_handler.editPlanRoute
+    description: Function to edit plan
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}
+          method: PUT
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  deletePlan:
+    name: ${self:service}_deletePlan${self:provider.stage}
+    handler: src/controllers/plans/_handler.deletePlanRoute
+    description: Function to delete plan
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}
+          method: DELETE
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  createSession:
+    name: ${self:service}_createSession${self:provider.stage}
+    handler: src/controllers/plans/_handler.createSessionRoute
+    description: Function to create session
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/sessions 
+          method: POST
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  getSessionById:
+    name: ${self:service}_getSessionById${self:provider.stage}
+    handler: src/controllers/plans/_handler.getSessionByIdRoute
+    description: Function to get session by id
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: sessions/{sessionId}
+          method: GET
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  getSessionByStudyPlan:
+    name: ${self:service}_getSessionBySubject${self:provider.stage}
+    handler: src/controllers/plans/_handler.getSessionByStudyPlanRoute
+    description: Function to get session by study plan
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/sessions
+          method: GET
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  listSessionsByFilter:
+    name: ${self:service}_listSessionsByFilter_${self:provider.stage}
+    handler: src/controllers/plans/_handler.listSessionsByFilterRoute
+    description: Function to get sessions by study plan, module and filters
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: courses/{courseId}/modules/{moduleId}/sessions
+          method: GET
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSessionsByFilter_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+  editSession:
+    name: ${self:service}_editSession${self:provider.stage}
+    handler: src/controllers/plans/_handler.editSessionRoute
+    description: Function to edit session
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: sessions/{sessionId}
+          method: PUT
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  deleteSession:
+    name: ${self:service}_deleteSession${self:provider.stage}
+    handler: src/controllers/plans/_handler.deleteSessionRoute
+    description: Function to delete session
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: sessions/{sessionId}
+          method: DELETE
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  createStudent:
+    name: ${self:service}_createStudent${self:provider.stage}
+    handler: src/controllers/plans/_handler.createStudentRoute
+    description: Function to create student
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/students
+          method: POST
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  getPlansByStudent:
+    name: ${self:service}_getPlansByStudent${self:provider.stage}
+    handler: src/controllers/plans/_handler.getPlansByStudentRoute
+    description: Function to get plans by student
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/students/{studentId}
+          method: GET
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  editStudent:
+    name: ${self:service}_editStudent${self:provider.stage}
+    handler: src/controllers/plans/_handler.editStudentRoute
+    description: Function to edit student
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/students/{studentId}
+          method: PUT
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  createStudentSession:
+    name: ${self:service}_createStudentSession${self:provider.stage}
+    handler: src/controllers/plans/_handler.createStudentSessionRoute
+    description: Function to create student sessions
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/sessions/{sessionId}/students/{studentId}
+          method: POST
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  editStudentSession:
+    name: ${self:service}_editStudentSession${self:provider.stage}
+    handler: src/controllers/plans/_handler.editStudentSessionRoute
+    description: Function to edit student sessions
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/sessions/{sessionId}/student-session/{studentSessionId}
+          method: PUT
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  getStudentSession:
+    name: ${self:service}_getStudentSession${self:provider.stage}
+    handler: src/controllers/plans/_handler.getStudentSessionRoute
+    description: Function to get student sessions
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/sessions/{sessionId}/student-session/{studentSessionId}
+          method: GET
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  getStudentSessionByStudent:
+    name: ${self:service}_getStudentSessionByStudent${self:provider.stage}
+    handler: src/controllers/plans/_handler.getStudentSessionByStudentRoute
+    description: Function to get student sessions by student
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plans/{studyPlanId}/sessions/{sessionId}/student/{studentId}
+          method: GET
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+  listStudentsBySubject:
+    name: ${self:service}_listStudentsBySubject${self:provider.stage}
+    handler: src/controllers/plans/_handler.listStudentsBySubjectRoute
+    description: Function to list students by subject
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: subjects/{subjectId}/students
+          method: GET
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listSubjectOnModule_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+  listPlansQuestions:
+    name: ${self:service}_listPlansQuestions${self:provider.stage}
+    handler: src/controllers/plans/_handler.listPlansQuestionsRoute
+    description: Function to list plans questions
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: plansQuestions
+          method: GET
+          cors: true
+          private: true
+          authorizer:
+            name: authorizerToken
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 0
+      - schedule:
+          name: ${self:service}_warmer-schedule-sofia-listPlansQuestions_${self:provider.stage}
+          rate: rate(5 minutes)
+          enabled: true
+          input:
+            warmer: true
+            concurrency: 1
+
+custom:
+  API_NAME: ${self:service}-${self:provider.stage}
+  apiGatewayXray: true
+  serverless-offline:
+    apiKey: local
+
+resources:
+  Resources:
+### Gateway
+    ApiGatewayRestApi:
+      Type: AWS::ApiGateway::RestApi
+      Properties:
+        Name: ${self:custom.API_NAME}
+
+### Gateway Response
+    GatewayResponseDefault400:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: DEFAULT_4XX
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"safea-4XX_generic\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseDefault500:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: DEFAULT_5XX
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"safea-5XX_generic\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseAccessDeied:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: ACCESS_DENIED
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"safea-403_access-denied\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseApiConfigurationError:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: API_CONFIGURATION_ERROR
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"safea-500_api-configuration-error\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseAuthorizerConfigurationError:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: AUTHORIZER_CONFIGURATION_ERROR
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"safea-500_authorizer-configuration-error\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseAuthorizerFailure:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: AUTHORIZER_FAILURE
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"safea-500_authorizer-failure\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseBadRequestBody:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: BAD_REQUEST_BODY
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"safea-400_bad-request-body\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseBadRequestParameters:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: BAD_REQUEST_PARAMETERS
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"safea-400_bad-request-parameters\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseExpiredToken:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: EXPIRED_TOKEN
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"safea-403_expired-token\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseIntegrationFailure:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: INTEGRATION_FAILURE
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"safea-504_integration-failure\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseIntegrationTimeout:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: INTEGRATION_TIMEOUT
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"safea-504_integration-timeout\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseInvalidApiKey:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: INVALID_API_KEY
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"safea-403_invalid-api-key\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseInvalidSignature:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: INVALID_SIGNATURE
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"safea-403_invalid-signature\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseMissingAuthenticationToken:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: MISSING_AUTHENTICATION_TOKEN
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"safea-403_missing-authentication-token\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseQuotaExceeded:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: QUOTA_EXCEEDED
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"safea-429_quota-exceeded\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseRequestTooLarge:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: REQUEST_TOO_LARGE
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"safea-413_request-too-large\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseResourceNotFound:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: RESOURCE_NOT_FOUND
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"safea-404_resource-not-found\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseThrottled:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: THROTTLED
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"safea-429_throttled\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseUnauthorized:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: UNAUTHORIZED
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"safea-401_unauthorized\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+    GatewayResponseUnauthorizedMediType:
+      Type: 'AWS::ApiGateway::GatewayResponse'
+      Properties:
+        RestApiId:
+          Ref: 'ApiGatewayRestApi'
+        ResponseType: UNSUPPORTED_MEDIA_TYPE
+        ResponseTemplates:
+          application/json: "{\"error\":{\"code\":\"safea-415_unsupported-media-type\",\"message\":$context.error.messageString},\"requestId\":\"$context.requestId\"}"
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-Allow-Headers: "'*'"
+
+package:
+ excludeDevDependencies: true
+ exclude:
+   - .vscode/**
+   - scripts/**
+   - coverage/**
+   - .git/**
+
